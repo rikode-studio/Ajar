@@ -15,30 +15,7 @@ export async function markLessonComplete(lessonId: string) {
     throw new Error("Unauthorized");
   }
 
-  // Check if already completed to avoid duplicate XP
-  const existingProgress = await db.query.lessonProgress.findFirst({
-    where: and(
-      eq(lessonProgress.userId, session.user.id),
-      eq(lessonProgress.lessonId, lessonId)
-    ),
-  });
-
-  if (!existingProgress) {
-    // Mark current as complete
-    await db
-      .insert(lessonProgress)
-      .values({
-        id: crypto.randomUUID(),
-        userId: session.user.id,
-        lessonId: lessonId,
-        completedAt: new Date(),
-      });
-
-    // Award XP
-    await awardXP(session.user.id, 10, `Completed lesson: ${lessonId}`);
-  }
-
-  // Find next lesson
+  // Fetch lesson and course hierarchy first to validate enrollment
   const currentLesson = await db.query.lessons.findFirst({
     where: eq(lessons.id, lessonId),
     with: {
@@ -63,29 +40,59 @@ export async function markLessonComplete(lessonId: string) {
 
   if (!currentLesson) throw new Error("Lesson not found");
 
+  const courseId = currentLesson.module.course.id;
+  const enrollment = await db.query.enrollments.findFirst({
+    where: and(
+      eq(enrollments.userId, session.user.id),
+      eq(enrollments.courseId, courseId)
+    ),
+  });
+
+  const isPaidEnrolled = enrollment?.paymentStatus === "paid";
+
+  // ponytail: require paid enrollment (or free preview lesson) before recording progress/XP
+  if (!isPaidEnrolled && !currentLesson.isFree) {
+    throw new Error("Anda harus terdaftar di kursus ini untuk menyelesaikan materi");
+  }
+
+  // Check if already completed to avoid duplicate XP
+  const existingProgress = await db.query.lessonProgress.findFirst({
+    where: and(
+      eq(lessonProgress.userId, session.user.id),
+      eq(lessonProgress.lessonId, lessonId)
+    ),
+  });
+
+  if (!existingProgress) {
+    // Mark current as complete
+    await db
+      .insert(lessonProgress)
+      .values({
+        id: crypto.randomUUID(),
+        userId: session.user.id,
+        lessonId: lessonId,
+        completedAt: new Date(),
+      });
+
+    // Award XP
+    await awardXP(session.user.id, 10, `Completed lesson: ${lessonId}`);
+  }
+
   const allLessons = currentLesson.module.course.modules.flatMap((m) => m.lessons);
   const currentIndex = allLessons.findIndex((l) => l.id === lessonId);
   const nextLesson = allLessons[currentIndex + 1];
 
-  // Check for course completion
-  const courseId = currentLesson.module.course.id;
+  // Check for course completion (requires paid enrollment)
   const totalLessons = allLessons.length;
-  const completedLessons = await db.query.lessonProgress.findMany({
-    where: and(
-      eq(lessonProgress.userId, session.user.id),
-      sql`${lessonProgress.lessonId} IN ${allLessons.map(l => l.id)}`
-    )
-  });
-
-  if (completedLessons.length === totalLessons) {
-    const enrollment = await db.query.enrollments.findFirst({
+  if (isPaidEnrolled && totalLessons > 0 && !enrollment.completedAt) {
+    const completedLessons = await db.query.lessonProgress.findMany({
       where: and(
-        eq(enrollments.userId, session.user.id),
-        eq(enrollments.courseId, courseId)
+        eq(lessonProgress.userId, session.user.id),
+        sql`${lessonProgress.lessonId} IN ${allLessons.map(l => l.id)}`
       )
     });
 
-    if (enrollment && !enrollment.completedAt) {
+    if (completedLessons.length === totalLessons) {
       await db.update(enrollments)
         .set({ completedAt: new Date() })
         .where(eq(enrollments.id, enrollment.id));

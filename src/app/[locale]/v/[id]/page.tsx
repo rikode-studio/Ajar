@@ -45,15 +45,26 @@ export default async function CertificatePage({
           and(eq(certs.courseId, courseData.id), eq(certs.userId, session.user.id)),
       });
 
-      // 2. If not found, issue one only if the course is truly finished
+      // 2. If not found, issue one only if the user is enrolled (paid) and course is truly finished
       if (!cert) {
-        const allLessonIds = courseData.modules.flatMap((m: any) => m.lessons.map((l: any) => l.id));
-        const completedRows = await db.query.lessonProgress.findMany({
-          where: (progress: any, { and, eq, inArray }: DrizzleCallback) =>
-            and(eq(progress.userId, session.user.id), inArray(progress.lessonId, allLessonIds)),
+        const enrollment = await db.query.enrollments.findFirst({
+          where: (e: any, { and, eq }: DrizzleCallback) =>
+            and(eq(e.courseId, courseData.id), eq(e.userId, session.user.id)),
         });
 
-        const isFinished = completedRows.length === allLessonIds.length && allLessonIds.length > 0;
+        const allLessonIds = courseData.modules.flatMap((m: any) => m.lessons.map((l: any) => l.id));
+        const completedRows =
+          enrollment?.paymentStatus === "paid" && allLessonIds.length > 0
+            ? await db.query.lessonProgress.findMany({
+                where: (progress: any, { and, eq, inArray }: DrizzleCallback) =>
+                  and(eq(progress.userId, session.user.id), inArray(progress.lessonId, allLessonIds)),
+              })
+            : [];
+
+        const isFinished =
+          enrollment?.paymentStatus === "paid" &&
+          completedRows.length === allLessonIds.length &&
+          allLessonIds.length > 0;
 
         if (isFinished) {
           const newCertId = crypto.randomUUID();

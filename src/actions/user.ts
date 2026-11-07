@@ -59,8 +59,13 @@ export async function updateProfile(formData: FormData) {
 }
 
 export async function getUserByUsername(username: string) {
+  // ponytail: exclude private contact fields (email, phone) from public profile query
   const user = await db.query.users.findFirst({
     where: eq(users.username, username),
+    columns: {
+      email: false,
+      phone: false,
+    },
     with: {
       enrollments: {
         with: {

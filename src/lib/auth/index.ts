@@ -19,13 +19,16 @@ export const auth = betterAuth({
   }),
   user: {
     additionalFields: {
+      // ponytail: block self-promotion/XP tampering via /api/auth/update-user
       role: {
         type: "string",
         defaultValue: "student",
+        input: false,
       },
       xp: {
         type: "number",
         defaultValue: 0,
+        input: false,
       },
       locale: {
         type: "string",

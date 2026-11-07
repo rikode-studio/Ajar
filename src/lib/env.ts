@@ -10,7 +10,14 @@ const envSchema = z.object({
   BETTER_AUTH_SECRET: z
     .string()
     .min(1)
-    .default("dev-only-secret-change-this-32-chars-min"),
+    .default("dev-only-secret-change-this-32-chars-min")
+    .refine(
+      (val) =>
+        process.env.NODE_ENV !== "production" ||
+        process.env.NEXT_PHASE === "phase-production-build" ||
+        val !== "dev-only-secret-change-this-32-chars-min",
+      "BETTER_AUTH_SECRET must be set to a secure secret in production"
+    ),
   BETTER_AUTH_URL: z.url().default("http://localhost:3000"),
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
