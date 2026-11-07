@@ -1,7 +1,7 @@
 {
   "name": "ajar",
   "version": "1.0.0",
-  "description": "Modern, Production-Ready, Bilingual Learning Management System Built with Next.js 15, React 19, Tailwind CSS v4, and PostgreSQL.",
+  "description": "Modern, Production-Ready, Bilingual Learning Management System Built with Next.js 16, React 19, Tailwind CSS v4, and PostgreSQL.",
   "author": "Riki Muhammad <https://github.com/r-iki>",
   "license": "MIT",
   "homepage": "https://ajar.rikode.com",

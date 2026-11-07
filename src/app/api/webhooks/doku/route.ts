@@ -15,21 +15,23 @@ export async function POST(request: Request) {
 
   const bodyText = await request.text();
 
-  // If secret key is configured, verify signature
-  if (config.secretKey) {
-    const isValid = verifyDokuNotification({
-      clientId,
-      requestId,
-      requestTimestamp,
-      requestTarget,
-      signature,
-      bodyString: bodyText,
-    });
+  // ponytail: never process unsigned webhook notifications
+  if (!config.secretKey) {
+    return NextResponse.json({ message: "DOKU webhook skipped: secret key not configured." }, { status: 202 });
+  }
 
-    if (!isValid) {
-      console.warn("DOKU webhook invalid signature received.");
-      return NextResponse.json({ message: "Invalid signature" }, { status: 400 });
-    }
+  const isValid = verifyDokuNotification({
+    clientId,
+    requestId,
+    requestTimestamp,
+    requestTarget,
+    signature,
+    bodyString: bodyText,
+  });
+
+  if (!isValid) {
+    console.warn("DOKU webhook invalid signature received.");
+    return NextResponse.json({ message: "Invalid signature" }, { status: 400 });
   }
 
   try {

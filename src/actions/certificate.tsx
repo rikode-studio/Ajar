@@ -2,6 +2,7 @@
 
 import { pdf } from "@react-pdf/renderer";
 
+import { getSession } from "@/lib/auth";
 import { sendCertificateEmail } from "@/lib/email/resend";
 import { CertificateDocument } from "@/lib/pdf/certificate";
 
@@ -12,12 +13,18 @@ type GenerateCertificateInput = {
 };
 
 export async function generateCertificate(input: GenerateCertificateInput) {
+  // ponytail: enforce auth so anonymous callers cannot trigger PDF rendering or outbound emails
+  const session = await getSession();
+  if (!session?.user) {
+    throw new Error("Unauthorized");
+  }
+
   const certificateCode = `AJR-${Date.now()}`;
   const issuedAt = new Date().toISOString();
 
   const document = (
     <CertificateDocument
-      userName={input.userName}
+      userName={session.user.name || input.userName}
       courseTitle={input.courseTitle}
       certificateCode={certificateCode}
       issuedAt={issuedAt}
@@ -29,7 +36,7 @@ export async function generateCertificate(input: GenerateCertificateInput) {
   const pdfStream = await instance.toBuffer();
 
   await sendCertificateEmail({
-    to: input.userEmail,
+    to: session.user.email,
     courseTitle: input.courseTitle,
     certificateCode,
   });

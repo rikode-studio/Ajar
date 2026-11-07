@@ -11,36 +11,38 @@ type QuizQuestion = {
   options: {
     id: string;
     text: string;
-    isCorrect: boolean;
   }[];
 };
 
 type QuizEngineProps = {
-  userId: string;
+  userId?: string;
   quizId: string;
   lessonId: string;
   questions: QuizQuestion[];
 };
 
-export function QuizEngine({ userId, quizId, lessonId, questions }: QuizEngineProps) {
+export function QuizEngine({ quizId, lessonId, questions }: QuizEngineProps) {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
-  const [result, setResult] = useState<{ score: number; percentage: number; passed: boolean; nextLessonId?: string | null } | null>(null);
+  const [result, setResult] = useState<{
+    score: number;
+    percentage: number;
+    passed: boolean;
+    nextLessonId?: string | null;
+    correctAnswers?: string[];
+  } | null>(null);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
   const handleSubmit = async () => {
     const selectedAnswers = questions.map((q) => answers[q.id] || "");
-    const correctAnswers = questions.map((q) => q.options.find((o) => o.isCorrect)?.id || "");
 
     startTransition(async () => {
       try {
         const res = await submitQuizAttempt({
-          userId,
           quizId,
           lessonId,
           selectedAnswers,
-          correctAnswers,
         });
         setResult(res);
         setSubmitted(true);
@@ -84,7 +86,7 @@ export function QuizEngine({ userId, quizId, lessonId, questions }: QuizEnginePr
             <div className="grid gap-3 pl-11">
               {question.options.map((option) => {
                 const isSelected = answers[question.id] === option.id;
-                const isCorrect = option.isCorrect;
+                const isCorrect = result?.correctAnswers?.[index] === option.id;
                 const showResult = submitted;
 
                 return (

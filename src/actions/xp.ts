@@ -1,5 +1,4 @@
-"use server";
-
+// ponytail: internal server helper only — not a "use server" endpoint so clients cannot self-award XP
 import { db } from "@/lib/db";
 import { users, xpTransactions } from "@/lib/db/schema";
 import { eq, sql } from "drizzle-orm";

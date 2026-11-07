@@ -165,7 +165,6 @@ export default async function LearnLessonPage({ params }: LearnLessonPageProps) 
           {currentLesson.type === "quiz" && quizData ? (
             <div className="mt-4">
               <QuizEngine 
-                userId={session.user.id}
                 quizId={quizData.id}
                 lessonId={currentLesson.id}
                 questions={quizData.questions.map(q => ({
@@ -174,7 +173,6 @@ export default async function LearnLessonPage({ params }: LearnLessonPageProps) 
                   options: q.choices.map(c => ({
                     id: c.id,
                     text: tDb(c.text, locale),
-                    isCorrect: c.isCorrect
                   }))
                 }))} 
               />

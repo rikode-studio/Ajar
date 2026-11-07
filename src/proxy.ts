@@ -12,6 +12,8 @@ const protectedPrefixes = [
   "/certificates",
   "/studio",
   "/admin",
+  "/overview",
+  "/users",
   "/settings",
   "/transactions",
   "/subscriptions",

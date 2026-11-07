@@ -2,9 +2,9 @@
 
 # 🎓 Ajar LMS
 
-**Modern, Production-Ready, Bilingual Learning Management System Built with Next.js 15 & PostgreSQL.**
+**Modern, Production-Ready, Bilingual Learning Management System Built with Next.js 16 & PostgreSQL.**
 
-[![Next.js 15](https://img.shields.io/badge/Next.js-15-black?style=flat-square&logo=next.js)](https://nextjs.org/)
+[![Next.js 16](https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=next.js)](https://nextjs.org/)
 [![React 19](https://img.shields.io/badge/React-19-blue?style=flat-square&logo=react)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 [![Tailwind CSS v4](https://img.shields.io/badge/Tailwind_CSS-v4-38B2AC?style=flat-square&logo=tailwind-css)](https://tailwindcss.com/)
@@ -22,7 +22,7 @@
 ## ✨ Key Features
 
 - 🌐 **Full Internationalization (i18n)**: Seamless English & Indonesian bilingual support with instant locale switching via `next-intl` and dual-language database fields.
-- ⚡ **Next.js 15 & React 19**: Powered by Next.js App Router, Server Components, Server Actions, and Turbopack.
+- ⚡ **Next.js 16 & React 19**: Powered by Next.js App Router, Server Components, Server Actions, and Turbopack.
 - 🔐 **Better Auth Authentication**: Complete auth suite with Email/Password, Google OAuth, Google One Tap, session management, and Role-Based Access Control (`student`, `instructor`, `admin`).
 - 💳 **Dual Payment Gateways**:
   - **DOKU (Jokul)**: Indonesia's leading payment gateway supporting QRIS (GoPay, ShopeePay, DANA, OVO), Virtual Accounts (BCA, Mandiri, BRI, BNI), E-Wallets, and Credit Cards.
@@ -96,7 +96,7 @@ ajar/
 
 | Layer | Technology | Description |
 |---|---|---|
-| **Framework** | [Next.js 15 (App Router)](https://nextjs.org/) | Fullstack React framework with Server Actions & Turbopack |
+| **Framework** | [Next.js 16 (App Router)](https://nextjs.org/) | Fullstack React framework with Server Actions & Turbopack |
 | **UI Library** | [React 19](https://react.dev/) | Latest React features and concurrency primitives |
 | **Language** | [TypeScript 5](https://www.typescriptlang.org/) | Strictly typed for robust development |
 | **Styling** | [Tailwind CSS v4](https://tailwindcss.com/) | Next-generation CSS framework with CSS variables |
@@ -235,7 +235,7 @@ Ajar uses [Drizzle ORM](https://orm.drizzle.team/) for migrations, relations, an
 1. Push your repository to GitHub.
 2. Import the project in [Vercel Dashboard](https://vercel.com).
 3. Set the environment variables listed in `.env.example`.
-4. Deploy! Next.js 15 App Router and API routes will configure automatically.
+4. Deploy! Next.js 16 App Router and API routes will configure automatically.
 
 ---
 

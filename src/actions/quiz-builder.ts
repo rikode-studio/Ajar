@@ -19,6 +19,11 @@ async function checkOwnership(courseId: string) {
 }
 
 export async function ensureQuizExists(lessonId: string) {
+  const session = await getSession();
+  if (!session || (session.user.role !== "instructor" && session.user.role !== "admin")) {
+    throw new Error("Unauthorized");
+  }
+
   const existing = await db.query.quizzes.findFirst({
     where: eq(quizzes.lessonId, lessonId),
   });

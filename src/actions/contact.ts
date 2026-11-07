@@ -9,6 +9,10 @@ export interface ContactFormData {
   message: string;
 }
 
+// ponytail: one-line HTML escape at email trust boundary
+const escapeHtml = (s: string) =>
+  s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] || c));
+
 export async function sendContactForm(data: ContactFormData) {
   const { name, email, subject, message } = data;
 
@@ -55,6 +59,11 @@ export async function sendContactForm(data: ContactFormData) {
       const fromEmail = process.env.RESEND_FROM_EMAIL || "Ajar Support <no-reply@ajar.local>";
       const toEmail = process.env.RESEND_TO_EMAIL || process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@ajar.local";
 
+      const safeName = escapeHtml(name);
+      const safeEmail = escapeHtml(email);
+      const safeSubject = escapeHtml(subject || "-");
+      const safeMessage = escapeHtml(message).replace(/\n/g, "<br>");
+
       const { error } = await resend.emails.send({
         from: fromEmail,
         to: [toEmail],
@@ -63,12 +72,12 @@ export async function sendContactForm(data: ContactFormData) {
           <div style="font-family: sans-serif; padding: 20px; color: #333;">
             <h2 style="color: #4f46e5;">Ada Pesan Baru dari Formulir Kontak Ajar</h2>
             <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
-            <p><strong>Nama:</strong> ${name}</p>
-            <p><strong>Email:</strong> ${email}</p>
-            <p><strong>Subjek:</strong> ${subject || "-"}</p>
+            <p><strong>Nama:</strong> ${safeName}</p>
+            <p><strong>Email:</strong> ${safeEmail}</p>
+            <p><strong>Subjek:</strong> ${safeSubject}</p>
             <p><strong>Pesan:</strong></p>
             <div style="background: #f9fafb; padding: 15px; border-radius: 8px; border: 1px solid #e5e7eb;">
-              ${message.replace(/\n/g, "<br>")}
+              ${safeMessage}
             </div>
           </div>
         `,

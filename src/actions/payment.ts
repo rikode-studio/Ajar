@@ -28,15 +28,22 @@ export async function startCheckout(input: StartCheckoutInput) {
 
   const paymentId = `INV-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
 
-  // Fetch course details if slug is needed
-  let courseSlug = input.courseSlug;
-  if (!courseSlug) {
-    const c = await db.query.courses.findFirst({
-      where: (c, { eq }) => eq(c.id, input.courseId),
-    });
-    courseSlug = c?.slug || "course";
+  // ponytail: always read price, currency, and slug from DB — never trust client input
+  const course = await db.query.courses.findFirst({
+    where: (c, { eq }) => eq(c.id, input.courseId),
+  });
+
+  if (!course || course.status !== "published") {
+    throw new Error("Kursus tidak ditemukan atau belum dipublikasikan");
   }
 
+  const price = Number(course.price);
+  if (price <= 0) {
+    throw new Error("Kursus ini gratis, silakan daftar tanpa pembayaran");
+  }
+
+  const currency = course.currency || "IDR";
+  const courseSlug = course.slug || "course";
   const locale = await getLocale();
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
@@ -46,9 +53,9 @@ export async function startCheckout(input: StartCheckoutInput) {
     await db.insert(payments).values({
       id: paymentId,
       userId: session.user.id,
-      courseId: input.courseId,
-      amount: input.amount.toString(),
-      currency: input.currency || "IDR",
+      courseId: course.id,
+      amount: price.toString(),
+      currency,
       gateway: "doku",
       status: "pending",
     });
@@ -59,7 +66,7 @@ export async function startCheckout(input: StartCheckoutInput) {
       .values({
         id: crypto.randomUUID(),
         userId: session.user.id,
-        courseId: input.courseId,
+        courseId: course.id,
         paymentStatus: "pending",
       })
       .onConflictDoUpdate({
@@ -69,7 +76,7 @@ export async function startCheckout(input: StartCheckoutInput) {
 
     const dokuSession = await createDokuCheckoutSession({
       orderId: paymentId,
-      amount: input.amount,
+      amount: price,
       courseTitle: input.courseTitle,
       courseSlug,
       userId: session.user.id,
@@ -94,9 +101,9 @@ export async function startCheckout(input: StartCheckoutInput) {
     await db.insert(payments).values({
       id: paymentId,
       userId: session.user.id,
-      courseId: input.courseId,
-      amount: input.amount.toString(),
-      currency: input.currency,
+      courseId: course.id,
+      amount: price.toString(),
+      currency,
       gateway: "stripe",
       status: "pending",
     });
@@ -106,7 +113,7 @@ export async function startCheckout(input: StartCheckoutInput) {
       .values({
         id: crypto.randomUUID(),
         userId: session.user.id,
-        courseId: input.courseId,
+        courseId: course.id,
         paymentStatus: "pending",
       })
       .onConflictDoUpdate({
@@ -116,10 +123,10 @@ export async function startCheckout(input: StartCheckoutInput) {
 
     const sessionStripe = await createStripeCheckoutSession({
       orderId: paymentId,
-      amount: input.amount,
-      currency: input.currency,
+      amount: price,
+      currency,
       courseTitle: input.courseTitle,
-      courseId: input.courseId,
+      courseId: course.id,
       userId: session.user.id,
       customerEmail: session.user.email,
       successUrl: `${appUrl}/${locale}/my-courses?status=success`,
@@ -163,7 +170,10 @@ export async function enrollFreeCourse(courseId: string) {
     },
   });
 
-  if (!course) throw new Error("Kursus tidak ditemukan");
+  if (!course || course.status !== "published") throw new Error("Kursus tidak ditemukan");
+  if (Number(course.price) > 0) {
+    throw new Error("Kursus ini berbayar, silakan lakukan pembayaran terlebih dahulu");
+  }
 
   const isManualApproval = course.enrollmentType === "manual";
   const initialStatus = isManualApproval ? "pending" : "paid";

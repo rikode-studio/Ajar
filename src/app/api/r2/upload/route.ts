@@ -21,11 +21,21 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Sanitize folder
-    const safeFolder = ["courses", "thumbnails", "avatars", "general"].includes(folder) ? folder : "courses";
+    // ponytail: validate MIME type and restrict studio folders to instructors/admins
+    const allowedMime = /^(image\/(jpeg|png|webp|gif|avif)|video\/(mp4|webm)|application\/pdf)$/i;
+    if (!allowedMime.test(contentType)) {
+      return NextResponse.json({ error: "Unsupported file type" }, { status: 400 });
+    }
+
+    const isPrivileged = session.user.role === "instructor" || session.user.role === "admin";
+    const safeFolder =
+      ["courses", "thumbnails", "avatars", "general"].includes(folder) &&
+      (isPrivileged || folder === "avatars")
+        ? folder
+        : "avatars";
 
     // Generate unique key
-    const extension = filename.split(".").pop() || "jpg";
+    const extension = (filename.split(".").pop() || "jpg").replace(/[^a-zA-Z0-9]/g, "");
     const key = `${safeFolder}/${session.user.id}-${nanoid(12)}.${extension}`;
 
     const result = await getPresignedUrl(key, contentType);
